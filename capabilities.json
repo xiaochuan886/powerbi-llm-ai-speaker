@@ -1,0 +1,147 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "分析数据",
+            "name": "analysisData",
+            "kind": "GroupingOrMeasure"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "analysisData"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "objects": {
+        "apiSettings": {
+            "displayName": "API设置",
+            "description": "配置API连接参数",
+            "properties": {
+                "provider": {
+                    "displayName": "API提供商",
+                    "description": "选择API提供商",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "apiKey": {
+                    "displayName": "API密钥",
+                    "description": "输入API密钥",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "apiBase": {
+                    "displayName": "API地址",
+                    "description": "输入API地址",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "model": {
+                    "displayName": "模型名称",
+                    "description": "输入模型名称",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "promptTemplate": {
+                    "displayName": "分析提示模板",
+                    "description": "输入分析提示模板",
+                    "type": {
+                        "text": true
+                    }
+                }
+            }
+        },
+        "styleSettings": {
+            "displayName": "样式设置",
+            "description": "自定义显示样式",
+            "properties": {
+                "fontFamily": {
+                    "displayName": "字体",
+                    "description": "选择字体",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "默认",
+                                "value": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+                            },
+                            {
+                                "displayName": "微软雅黑",
+                                "value": "'Microsoft YaHei', sans-serif"
+                            },
+                            {
+                                "displayName": "宋体",
+                                "value": "SimSun, serif"
+                            }
+                        ]
+                    }
+                },
+                "fontSize": {
+                    "displayName": "字号",
+                    "description": "设置字号大小",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "textColor": {
+                    "displayName": "文字颜色",
+                    "description": "设置文字颜色",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "backgroundColor": {
+                    "displayName": "背景颜色",
+                    "description": "设置背景颜色",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "backgroundOpacity": {
+                    "displayName": "背景透明度",
+                    "description": "设置背景透明度",
+                    "type": {
+                        "numeric": true
+                    }
+                }
+            }
+        }
+    },
+    "privileges": [
+        {
+            "name": "WebAccess",
+            "essential": true,
+            "parameters": [
+                "https://cdn.tailwindcss.com",
+                "https://cdnjs.cloudflare.com",
+                "https://api.moonshot.cn",
+                "https://api.openai.com",
+                "*"
+            ]
+        },
+        {
+            "name": "LocalStorage",
+            "essential": true
+        }
+    ]
+}
+

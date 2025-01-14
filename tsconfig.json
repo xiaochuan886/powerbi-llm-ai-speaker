@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "./.tmp/build/",
+        "allowJs": false,
+        "lib": [
+            "es2015",
+            "dom"
+        ],
+        "declaration": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true
+    },
+    "files": [
+        "src/visual.ts",
+        "src/validator.ts",
+        "src/logger.ts",
+        "src/i18n.ts"
+    ]
+}

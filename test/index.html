@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PowerBI Visual Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+        
+        .test-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .visual-panel {
+            flex: 1;
+        }
+
+        .control-panel {
+            width: 300px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        #visual-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            position: relative;
+            background: white;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .test-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0078d4;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        #debug-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: monospace;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .debug-entry {
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .debug-time {
+            color: #888;
+        }
+
+        .debug-label {
+            color: #4CAF50;
+            margin-right: 8px;
+        }
+    </style>
+    <link rel="stylesheet" href="../style/visual.css">
+</head>
+<body>
+    <div class="test-container">
+        <div class="visual-panel">
+            <h2>视觉对象预览</h2>
+            <div id="visual-container"></div>
+        </div>
+        
+        <div class="control-panel">
+            <h2>测试控制面板</h2>
+            
+            <div class="test-actions">
+                <button class="btn btn-primary" id="test-loading">测试加载动画</button>
+                <button class="btn btn-secondary" id="test-error">测试错误显示</button>
+            </div>
+
+            <div class="settings-group">
+                <h3>API 设置</h3>
+                <div class="form-group">
+                    <label>API Provider</label>
+                    <select id="api-provider">
+                        <option value="moonshot">Moonshot</option>
+                        <option value="openai">OpenAI</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="api-key" placeholder="输入 API Key">
+                </div>
+                <div class="form-group">
+                    <label>API Base URL</label>
+                    <input type="text" id="api-base" placeholder="API 基础地址">
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" id="model" placeholder="模型名称">
+                </div>
+                <div class="form-group">
+                    <label>分析提示模板</label>
+                    <textarea id="prompt-template" rows="4" placeholder="输入提示模板，使用 {data} 作为数据占位符">请分析以下数据并给出见解：
+
+{data}
+
+请用中文回答，并使用 Markdown 格式。</textarea>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>样式设置</h3>
+                <div class="form-group">
+                    <label>默认提示文字</label>
+                    <input type="text" id="default-message" value="等待分析..." placeholder="输入默认显示的文字">
+                </div>
+                <div class="form-group">
+                    <label>文字颜色</label>
+                    <input type="color" id="text-color" value="#000000">
+                </div>
+                <div class="form-group">
+                    <label>背景颜色</label>
+                    <input type="color" id="background-color" value="#ffffff">
+                </div>
+                <div class="form-group">
+                    <label>按钮背景色</label>
+                    <input type="color" id="button-background" value="#0078d4">
+                </div>
+                <div class="form-group">
+                    <label>按钮文字颜色</label>
+                    <input type="color" id="button-text-color" value="#ffffff">
+                </div>
+                <div class="form-group">
+                    <label>字体</label>
+                    <select id="font-family">
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>字体大小</label>
+                    <input type="number" id="font-size" value="14" min="8" max="32">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>测试数据</h3>
+                <div class="form-group">
+                    <label>模拟数据</label>
+                    <textarea id="test-data" rows="5" placeholder="输入 JSON 格式的测试数据"></textarea>
+                </div>
+                <button class="btn btn-primary" id="update-data">更新数据</button>
+                <div class="test-actions" style="margin-top: 10px;">
+                    <button class="btn btn-primary" id="analyze-btn" style="width: 100%;">获取AI见解</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="debug-panel">
+        <div class="debug-entry">
+            <span class="debug-time">[初始化]</span>
+            <span class="debug-label">测试环境已加载</span>
+        </div>
+    </div>
+
+    <script>
+        // 模拟 PowerBI 环境
+        const powerbi = {
+            extensibility: {
+                visual: {}
+            },
+            VisualUpdateType: {
+                Style: 2
+            }
+        };
+
+        // 默认的提示模板
+        const defaultPromptTemplate = `请分析以下数据并给出见解：
+
+{data}
+
+请用中文回答，并使用 Markdown 格式。`;
+
+        // 默认测试数据
+        const defaultTestData = [
+            { "产品": "产品A", "销量": 100, "收入": 1000 },
+            { "产品": "产品B", "销量": 200, "收入": 2000 },
+            { "产品": "产品C", "销量": 300, "收入": 3000 }
+        ];
+
+        // 初始化测试数据
+        document.getElementById('test-data').value = JSON.stringify(defaultTestData, null, 2);
+
+        // 创建视觉对象实例
+        let visualInstance;
+
+        // 初始化函数
+        function initializeVisual() {
+            const container = document.getElementById('visual-container');
+            
+            // 模拟 PowerBI 的构造函数选项
+            const options = {
+                element: container,
+                host: {
+                    createSelectionManager: () => ({
+                        select: () => {},
+                        clear: () => {}
+                    })
+                }
+            };
+
+            // 创建视觉对象实例
+            visualInstance = new Visual(options);
+
+            // 设置默认值
+            document.getElementById('prompt-template').value = defaultPromptTemplate;
+            document.getElementById('api-base').value = 'https://api.moonshot.cn/v1';
+            document.getElementById('model').value = 'moonshot-v1-8k';
+            
+            // 初始化更新
+            updateVisual();
+        }
+
+        // 更新 API 设置
+        function updateApiSettings() {
+            if (!visualInstance || !visualInstance.formattingSettings) return;
+            
+            const apiSettings = visualInstance.formattingSettings.apiSettings;
+            if (!apiSettings) return;
+
+            apiSettings.provider = { value: document.getElementById('api-provider').value };
+            apiSettings.apiKey = { value: document.getElementById('api-key').value };
+            apiSettings.apiBase = { value: document.getElementById('api-base').value };
+            apiSettings.model = { value: document.getElementById('model').value };
+            apiSettings.promptTemplate = { value: document.getElementById('prompt-template').value };
+        }
+
+        // 更新视觉对象
+        function updateVisual() {
+            try {
+                const testData = JSON.parse(document.getElementById('test-data').value);
+                
+                // 创建数据视图
+                const dataView = {
+                    table: {
+                        columns: Object.keys(testData[0]).map(key => ({
+                            displayName: key
+                        })),
+                        rows: testData.map(item => Object.values(item))
+                    }
+                };
+
+                // 更新 API 设置
+                updateApiSettings();
+
+                // 更新视觉对象
+                visualInstance.update({
+                    dataViews: [dataView],
+                    type: powerbi.VisualUpdateType.Style
+                });
+
+                logDebug('数据更新', '视觉对象已更新');
+            } catch (error) {
+                logDebug('错误', error.message);
+            }
+        }
+
+        // 分析按钮点击处理
+        document.getElementById('analyze-btn').onclick = async () => {
+            try {
+                updateApiSettings();
+                await visualInstance.analyze();
+                logDebug('分析', '分析请求已发送');
+            } catch (error) {
+                logDebug('分析错误', error.message);
+            }
+        };
+
+        // API 设置变更处理
+        ['api-provider', 'api-key', 'api-base', 'model', 'prompt-template'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                updateApiSettings();
+                logDebug('API设置', `更新 ${id}`);
+            });
+        });
+
+        // 测试加载动画
+        document.getElementById('test-loading').onclick = () => {
+            visualInstance.showLoading(true);
+            setTimeout(() => {
+                visualInstance.showLoading(false);
+            }, 3000);
+            logDebug('测试', '显示加载动画 3 秒');
+        };
+
+        // 测试错误显示
+        document.getElementById('test-error').onclick = () => {
+            visualInstance.showError(new Error('这是一个测试错误'));
+            logDebug('测试', '显示错误信息');
+        };
+
+        // 更新数据按钮
+        document.getElementById('update-data').onclick = updateVisual;
+
+        // 调试日志
+        function logDebug(label, content) {
+            const debugPanel = document.getElementById('debug-panel');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'debug-entry';
+            entry.innerHTML = `
+                <span class="debug-time">[${time}]</span>
+                <span class="debug-label">${label}:</span>
+                <span>${content}</span>
+            `;
+            debugPanel.insertBefore(entry, debugPanel.firstChild);
+        }
+
+        // 样式设置更改处理
+        const styleInputs = [
+            'default-message',
+            'text-color',
+            'background-color',
+            'button-background',
+            'button-text-color',
+            'font-family',
+            'font-size'
+        ];
+
+        styleInputs.forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                updateVisual();
+                logDebug('样式', `更新 ${id}`);
+            });
+        });
+
+        // 初始化视觉对象
+        window.onload = initializeVisual;
+    </script>
+</body>
+</html> 

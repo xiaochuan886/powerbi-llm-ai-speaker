@@ -142,4 +142,4 @@ export class styleSettingsCard extends formattingSettings.Model {
         }];
         return instances;
     }
-} 
+}

@@ -3,6 +3,7 @@
 import powerbi from "powerbi-visuals-api";  
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";  
 import { VisualFormattingSettingsModel } from "./settings";  
+import './../style/visual.less';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;  
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;  
@@ -27,6 +28,7 @@ export class Visual implements IVisual {
     private mainContainer: HTMLDivElement;
     private resultDiv: HTMLDivElement;
     private converter: any;
+    private loadingElement: HTMLElement;
 
     constructor(options: VisualConstructorOptions) {  
         console.log('Visual constructor called');
@@ -36,13 +38,25 @@ export class Visual implements IVisual {
             this.formattingSettingsService = new FormattingSettingsService();
             this.formattingSettings = new VisualFormattingSettingsModel();  
             
+            // 创建 loading 元素（移到最前面）
+            this.loadingElement = document.createElement('div');
+            this.loadingElement.className = 'loading-spinner';
+            
             // 初始化界面
             this.initializeUI();
+            
+            // 将 loading 元素添加到 mainContainer 而不是 target
+            this.mainContainer.appendChild(this.loadingElement);
             
             // 立即加载 showdown
             this.loadShowdown().catch(error => {
                 console.error('Failed to load Showdown:', error);
             });
+
+            // 设置初始默认消息
+            if (this.resultDiv) {
+                this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">等待分析...</div>`;
+            }
         } catch (error) {
             console.error('Error in constructor:', error);
             this.showError(error);
@@ -95,6 +109,24 @@ export class Visual implements IVisual {
     private initializeUI() {
         // 清空目标元素
         this.target.innerHTML = '';
+        
+        // 创建主容器
+        this.mainContainer = document.createElement('div');
+        this.mainContainer.className = 'container';
+        
+        // 创建内容区域
+        const content = document.createElement('div');
+        content.className = 'content';
+        
+        // 创建结果区域
+        this.resultDiv = document.createElement('div');
+        this.resultDiv.className = 'markdown-body';
+        this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">等待分析...</div>`;
+        
+        // 正确的嵌套顺序
+        content.appendChild(this.resultDiv);
+        this.mainContainer.appendChild(content);
+        this.target.appendChild(this.mainContainer);
         
         // 添加样式
         const style = document.createElement('style');
@@ -278,66 +310,6 @@ export class Visual implements IVisual {
         `;
         document.head.appendChild(style);
         
-        // 创建主容器
-        this.mainContainer = document.createElement('div');
-        this.mainContainer.className = 'container';
-        
-        // 创建内容区域
-        const content = document.createElement('div');
-        content.className = 'content';
-        
-        // 创建结果区域
-        this.resultDiv = document.createElement('div');
-        this.resultDiv.className = 'markdown-body';
-        this.resultDiv.textContent = '等待分析...';
-        
-        // 添加点击复制功能
-        this.resultDiv.addEventListener('click', async () => {
-            try {
-                // 创建一个临时的文本区域
-                const textarea = document.createElement('textarea');
-                textarea.value = this.resultDiv.innerText;
-                textarea.style.position = 'fixed';
-                textarea.style.left = '-9999px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                
-                // 尝试复制
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                
-                // 添加视觉反馈
-                const originalBg = window.getComputedStyle(this.resultDiv).backgroundColor;
-                this.resultDiv.style.backgroundColor = 'rgba(0, 120, 212, 0.1)';
-                setTimeout(() => {
-                    this.resultDiv.style.backgroundColor = '';
-                }, 200);
-
-                // 显示复制成功提示
-                const toast = document.createElement('div');
-                toast.className = 'copy-toast';
-                toast.textContent = '复制成功';
-                document.body.appendChild(toast);
-                
-                // 强制重绘以触发动画
-                void toast.offsetWidth;
-                toast.classList.add('show');
-                
-                // 1.5秒后移除提示
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => {
-                        document.body.removeChild(toast);
-                    }, 300);
-                }, 1500);
-            } catch (err) {
-                console.error('复制失败:', err);
-            }
-        });
-        
-        content.appendChild(this.resultDiv);
-        this.mainContainer.appendChild(content);
-        
         // 创建按钮容器
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'button-container';
@@ -389,9 +361,6 @@ export class Visual implements IVisual {
         debugDiv.style.display = 'none'; // 确保调试区域默认隐藏
         debugDiv.innerHTML = '<div class="debug-entry"><div class="debug-label">调试信息</div><div class="debug-content">调试信息将显示在这里...</div></div>';
         document.body.appendChild(debugDiv);
-        
-        // 添加到目标元素
-        this.target.appendChild(this.mainContainer);
         
         // 初始化时添加一条调试信息
         this.logDebug('初始化', '界面已加载完成');
@@ -639,39 +608,44 @@ export class Visual implements IVisual {
         this.logDebug('开始分析', '进入 analyze 方法');
         const button = this.mainContainer.querySelector('#analyze-btn') as HTMLButtonElement;
         
-        // 获取 API 设置
-        const apiSettings = this.formattingSettings.apiSettings;
-        
-        // 检查 API 设置
-        const missingSettings = [];
-        if (!apiSettings.apiKey?.value) missingSettings.push('API密钥');
-        if (!apiSettings.model?.value) missingSettings.push('模型名称');
-        if (!apiSettings.apiBase?.value) missingSettings.push('API地址');
-        if (!apiSettings.promptTemplate?.value) missingSettings.push('分析提示模板');
-
-        if (missingSettings.length > 0) {
-            this.showError(new Error(`请在设置面板中完善以下API设置：${missingSettings.join('、')}`));
-            return;
-        }
-
-        // 更新本地设置
-        this.settings = {
-            provider: apiSettings.provider?.value || 'moonshot',
-            apiKey: apiSettings.apiKey.value,
-            apiBase: apiSettings.apiBase.value,
-            model: apiSettings.model.value,
-            promptTemplate: apiSettings.promptTemplate.value
-        };
-
-        if (!this.currentData || this.currentData.length === 0) {
-            this.showError(new Error('暂无数据可供分析'));
-            return;
-        }
-
         try {
+            // 显示加载动画
+            this.showLoading(true);
+            
             button.disabled = true;
             button.textContent = '分析中...';
-            this.resultDiv.innerHTML = '<div>正在处理...</div>';
+            
+            // 清空结果区域
+            this.resultDiv.innerHTML = '';
+
+            // 获取 API 设置
+            const apiSettings = this.formattingSettings.apiSettings;
+            
+            // 检查 API 设置
+            const missingSettings = [];
+            if (!apiSettings.apiKey?.value) missingSettings.push('API密钥');
+            if (!apiSettings.model?.value) missingSettings.push('模型名称');
+            if (!apiSettings.apiBase?.value) missingSettings.push('API地址');
+            if (!apiSettings.promptTemplate?.value) missingSettings.push('分析提示模板');
+
+            if (missingSettings.length > 0) {
+                this.showError(new Error(`请在设置面板中完善以下API设置：${missingSettings.join('、')}`));
+                return;
+            }
+
+            // 更新本地设置
+            this.settings = {
+                provider: apiSettings.provider?.value || 'moonshot',
+                apiKey: apiSettings.apiKey.value,
+                apiBase: apiSettings.apiBase.value,
+                model: apiSettings.model.value,
+                promptTemplate: apiSettings.promptTemplate.value
+            };
+
+            if (!this.currentData || this.currentData.length === 0) {
+                this.showError(new Error('暂无数据可供分析'));
+                return;
+            }
 
             // 确保 Showdown 已加载
             if (!this.converter) {
@@ -733,6 +707,8 @@ export class Visual implements IVisual {
         } catch (err) {
             this.showError(err);
         } finally {
+            // 隐藏加载动画
+            this.showLoading(false);
             button.disabled = false;
             button.textContent = '获取AI见解';
         }
@@ -748,9 +724,9 @@ export class Visual implements IVisual {
                 return;
             }
 
-            // 解析设置
+            // 移除默认消息相关的检查和更新
             this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews);
-            
+
             // 更新样式设置
             if ((options.type & powerbi.VisualUpdateType.Style) === powerbi.VisualUpdateType.Style) {
                 this.updateStyles();
@@ -799,6 +775,53 @@ export class Visual implements IVisual {
         } catch (error) {
             console.error('Error in updateInternal:', error);
             this.showError(error as Error);
+        }
+    }
+
+    private showLoading(visible: boolean): void {
+        if (this.loadingElement) {
+            // 确保 z-index 正确
+            this.loadingElement.style.zIndex = '9999';
+            
+            // 添加加载文字
+            if (!this.loadingElement.querySelector('.loading-text')) {
+                const loadingText = document.createElement('div');
+                loadingText.className = 'loading-text';
+                loadingText.textContent = '分析中...';
+                this.loadingElement.appendChild(loadingText);
+            }
+
+            // 使用 CSS 类来控制显示/隐藏，以获得平滑的过渡效果
+            if (visible) {
+                this.loadingElement.style.display = 'flex';
+                // 使用 requestAnimationFrame 确保过渡效果生效
+                requestAnimationFrame(() => {
+                    this.loadingElement.classList.add('visible');
+                });
+            } else {
+                this.loadingElement.classList.remove('visible');
+                // 等待过渡效果完成后再隐藏元素
+                setTimeout(() => {
+                    this.loadingElement.style.display = 'none';
+                }, 300); // 与 CSS 过渡时间相匹配
+            }
+            
+            // 当显示加载动画时，保存当前内容
+            if (visible && this.resultDiv) {
+                // 只有当当前内容不是默认提示时才保存
+                const currentContent = this.resultDiv.innerHTML;
+                if (currentContent.indexOf('等待分析...') === -1) {
+                    this.resultDiv.dataset.savedContent = currentContent;
+                }
+                this.resultDiv.innerHTML = '';
+            } else if (!visible && this.resultDiv) {
+                // 恢复保存的内容
+                const savedContent = this.resultDiv.dataset.savedContent;
+                if (savedContent) {
+                    this.resultDiv.innerHTML = savedContent;
+                    delete this.resultDiv.dataset.savedContent;
+                }
+            }
         }
     }
 }

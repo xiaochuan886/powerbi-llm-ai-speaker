@@ -22,6 +22,9 @@ export interface ILanguageResources {
             errorTitle: string;
             dataLimitError: string;
             apiError: string;
+            copyButton: string;
+            copySuccess: string;
+            copyError: string;
         };
     };
 }
@@ -49,7 +52,10 @@ export const languageResources: ILanguageResources = {
             waitingMessage: "等待分析...",
             errorTitle: "错误",
             dataLimitError: "数据量超过1000行限制",
-            apiError: "API调用失败，请检查设置"
+            apiError: "API调用失败，请检查设置",
+            copyButton: "复制内容",
+            copySuccess: "复制成功！",
+            copyError: "复制失败，请重试"
         }
     },
     "en-US": {
@@ -70,10 +76,13 @@ export const languageResources: ILanguageResources = {
             backgroundOpacity: "Background Opacity"
         },
         ui: {
-            analyzeButton: "Start Analysis",
+            analyzeButton: "Start Analysis", 
             waitingMessage: "Waiting for analysis...",
             errorTitle: "Error",
             dataLimitError: "Data exceeds 1000 rows limit",
+            copyButton: "Copy Content",
+            copySuccess: "Copy successful!",
+            copyError: "Copy failed, please try again",
             apiError: "API call failed, please check settings"
         }
     }

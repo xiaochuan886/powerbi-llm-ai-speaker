@@ -116,9 +116,31 @@
                         }
                     }
                 },
-                "backgroundOpacity": {
-                    "displayName": "背景透明度",
-                    "description": "设置背景透明度",
+                "buttonBackgroundColor": {
+                    "displayName": "按钮背景色",
+                    "description": "设置按钮背景颜色",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "buttonTextColor": {
+                    "displayName": "按钮文字颜色",
+                    "description": "设置按钮文字颜色",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "buttonBorderRadius": {
+                    "displayName": "按钮圆角",
+                    "description": "设置按钮圆角大小",
                     "type": {
                         "numeric": true
                     }

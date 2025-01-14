@@ -1,6 +1,6 @@
 {
-  "name": "superAI",
-  "version": "1.0.0",
+  "name": "LlmAISpeaker",
+  "version": "1.0.1",
   "description": "AI Insight Analysis Visual for Power BI",
   "scripts": {
     "pbiviz": "pbiviz",

@@ -471,17 +471,23 @@ export class Visual implements IVisual {
             // 获取颜色值
             const textColor = this.getColorValue(styleSettings.textColor);
             const backgroundColor = this.getColorValue(styleSettings.backgroundColor);
+            const buttonBackgroundColor = this.getColorValue(styleSettings.buttonBackgroundColor);
+            const buttonTextColor = this.getColorValue(styleSettings.buttonTextColor);
             
             // 获取字体和字号
             const fontFamily = styleSettings.fontFamily?.value || "'Arial Unicode MS'";
             const fontSize = Number(styleSettings.fontSize?.value) || 14;
+            const buttonBorderRadius = Number(styleSettings.buttonBorderRadius?.value) || 4;
             
             // 记录处理后的值
             this.logDebug('处理后的样式值', JSON.stringify({
                 textColor,
                 backgroundColor,
                 fontFamily,
-                fontSize
+                fontSize,
+                buttonBackgroundColor,
+                buttonTextColor,
+                buttonBorderRadius
             }));
 
             // 创建样式规则
@@ -546,6 +552,39 @@ export class Visual implements IVisual {
                     padding-left: 2em !important;
                     margin: 0.5em 0 !important;
                 }
+
+                #${this.target.id} .analyze-btn {
+                    padding: 8px 24px !important;
+                    border: none !important;
+                    border-radius: ${buttonBorderRadius}px !important;
+                    cursor: pointer !important;
+                    font-weight: 500 !important;
+                    transition: all 0.2s ease-in-out !important;
+                    min-width: 120px !important;
+                    background-color: ${buttonBackgroundColor} !important;
+                    color: ${buttonTextColor} !important;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                }
+
+                #${this.target.id} .analyze-btn:hover {
+                    background-color: ${this.adjustColor(buttonBackgroundColor, -20)} !important;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+                    transform: translateY(-1px) !important;
+                }
+
+                #${this.target.id} .analyze-btn:active {
+                    background-color: ${this.adjustColor(buttonBackgroundColor, -40)} !important;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+                    transform: translateY(1px) !important;
+                }
+
+                #${this.target.id} .analyze-btn:disabled {
+                    background-color: #ccc !important;
+                    color: #666 !important;
+                    cursor: not-allowed !important;
+                    box-shadow: none !important;
+                    transform: none !important;
+                }
             `;
             
             // 应用样式
@@ -562,6 +601,37 @@ export class Visual implements IVisual {
         } catch (err) {
             console.error('Error in updateStyles:', err);
             this.logDebug('样式更新错误', String(err));
+        }
+    }
+
+    // 辅助方法：调整颜色亮度
+    private adjustColor(color: string, amount: number): string {
+        try {
+            // 移除可能的空格和#号
+            color = color.replace(/\s/g, '').replace('#', '');
+            
+            // 如果是3位颜色值，转换为6位
+            if (color.length === 3) {
+                color = color[0] + color[0] + color[1] + color[1] + color[2] + color[2];
+            }
+            
+            // 解析RGB值
+            const r = parseInt(color.substr(0, 2), 16);
+            const g = parseInt(color.substr(2, 2), 16);
+            const b = parseInt(color.substr(4, 2), 16);
+            
+            // 调整亮度
+            const adjustValue = (value: number) => {
+                value = Math.max(0, Math.min(255, value + amount));
+                const hex = value.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            };
+            
+            // 返回新的颜色值
+            return '#' + adjustValue(r) + adjustValue(g) + adjustValue(b);
+        } catch (error) {
+            console.error('Error adjusting color:', error);
+            return color; // 如果出错，返回原始颜色
         }
     }
 

@@ -184,6 +184,11 @@ export class Visual implements IVisual {
                 overflow-wrap: break-word;
                 padding: 0;
                 margin: 0;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+            }
+            .markdown-body:hover {
+                background-color: rgba(0, 0, 0, 0.02);
             }
             .markdown-body p,
             .markdown-body span,
@@ -252,6 +257,24 @@ export class Visual implements IVisual {
             #debug .error {
                 color: #ff4444;
             }
+            .copy-toast {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-size: 14px;
+                z-index: 10000;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .copy-toast.show {
+                opacity: 1;
+            }
         `;
         document.head.appendChild(style);
         
@@ -267,8 +290,52 @@ export class Visual implements IVisual {
         this.resultDiv = document.createElement('div');
         this.resultDiv.className = 'markdown-body';
         this.resultDiv.textContent = '等待分析...';
-        content.appendChild(this.resultDiv);
         
+        // 添加点击复制功能
+        this.resultDiv.addEventListener('click', async () => {
+            try {
+                // 创建一个临时的文本区域
+                const textarea = document.createElement('textarea');
+                textarea.value = this.resultDiv.innerText;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                // 尝试复制
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                // 添加视觉反馈
+                const originalBg = window.getComputedStyle(this.resultDiv).backgroundColor;
+                this.resultDiv.style.backgroundColor = 'rgba(0, 120, 212, 0.1)';
+                setTimeout(() => {
+                    this.resultDiv.style.backgroundColor = '';
+                }, 200);
+
+                // 显示复制成功提示
+                const toast = document.createElement('div');
+                toast.className = 'copy-toast';
+                toast.textContent = '复制成功';
+                document.body.appendChild(toast);
+                
+                // 强制重绘以触发动画
+                void toast.offsetWidth;
+                toast.classList.add('show');
+                
+                // 1.5秒后移除提示
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 1500);
+            } catch (err) {
+                console.error('复制失败:', err);
+            }
+        });
+        
+        content.appendChild(this.resultDiv);
         this.mainContainer.appendChild(content);
         
         // 创建按钮容器
@@ -295,6 +362,11 @@ export class Visual implements IVisual {
         analyzeBtn.className = 'analyze-btn';
         analyzeBtn.textContent = '获取AI见解';
         
+        // 确保初始样式设置生效
+        requestAnimationFrame(() => {
+            this.updateStyles();
+        });
+
         analyzeBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -341,27 +413,7 @@ export class Visual implements IVisual {
         }
     }
 
-    private hexToRgb(hex: string | undefined): string {
-        if (!hex) {
-            return '255, 255, 255'; // 默认白色
-        }
-        try {
-            // 移除可能的 # 前缀
-            hex = hex.replace(/^#/, '');
-            
-            // 解析 RGB 值
-            const bigint = parseInt(hex, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            
-            return `${r}, ${g}, ${b}`;
-        } catch (error) {
-            console.error('Error parsing color:', error);
-            return '255, 255, 255'; // 出错时返回白色
-        }
-    }
-
+ 
     private getColorValue(colorObj: any): string {
         try {
             if (!colorObj) return '#000000';
@@ -604,10 +656,7 @@ export class Visual implements IVisual {
                 const htmlContent = this.converter.makeHtml(markdownContent);
                 this.resultDiv.innerHTML = htmlContent;
 
-                // 确保在设置 innerHTML 后立即更新样式
-                requestAnimationFrame(() => {
-                    this.updateStyles();
-                });
+                this.logDebug('分析完成', '结果已显示');
             } else {
                 throw new Error(messageContent ? 'Markdown 转换器未准备就绪' : '响应格式不正确');
             }
@@ -620,48 +669,7 @@ export class Visual implements IVisual {
     }
 
     private logDebug(label: string, content: string) {
-        const debugDiv = document.getElementById('debug');
-        if (debugDiv) {
-            const time = new Date().toLocaleTimeString();
-            const entryDiv = document.createElement('div');
-            entryDiv.className = 'debug-entry';
-            
-            const timeDiv = document.createElement('div');
-            timeDiv.className = 'debug-time';
-            timeDiv.textContent = time;
-            
-            const labelDiv = document.createElement('div');
-            labelDiv.className = 'debug-label';
-            labelDiv.textContent = label;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'debug-content';
-            
-            try {
-                // 尝试格式化 JSON 字符串
-                const parsedContent = JSON.parse(content);
-                const formattedContent = JSON.stringify(parsedContent, null, 2);
-                const pre = document.createElement('pre');
-                pre.textContent = formattedContent;
-                contentDiv.appendChild(pre);
-            } catch {
-                // 如果不是 JSON，直接显示原始内容
-                contentDiv.textContent = content;
-            }
-            
-            entryDiv.appendChild(timeDiv);
-            entryDiv.appendChild(labelDiv);
-            entryDiv.appendChild(contentDiv);
-            
-            debugDiv.insertBefore(entryDiv, debugDiv.firstChild);
-            
-            // 限制调试条目数量
-            const maxEntries = 100;
-            const entries = debugDiv.getElementsByClassName('debug-entry');
-            while (entries.length > maxEntries) {
-                debugDiv.removeChild(entries[entries.length - 1]);
-            }
-        }
+        console.log(`[${label}]`, content);
     }
 
     public update(options: VisualUpdateOptions) {
@@ -717,9 +725,7 @@ export class Visual implements IVisual {
             }
 
             // 确保在数据更新后应用样式
-            requestAnimationFrame(() => {
-                this.updateStyles();
-            });
+           
         } catch (error) {
             console.error('Error in updateInternal:', error);
             this.showError(error as Error);

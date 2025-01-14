@@ -5,11 +5,7 @@ const DefaultSettings = {
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
     fontSize: 14,
     textColor: { value: "#24292e" },
-    backgroundColor: { value: "#ffffff" },
-    buttonFontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-    buttonFontSize: 14,
-    buttonTextColor: { value: "#ffffff" },
-    buttonBackgroundColor: { value: "#0078d4" }
+    backgroundColor: { value: "#ffffff" }
 };
 
 export class styleSettingsCard extends formattingSettings.Model {
@@ -51,44 +47,6 @@ export class styleSettingsCard extends formattingSettings.Model {
         value: DefaultSettings.backgroundColor
     });
 
-    buttonFontFamily = new formattingSettings.FontPicker({
-        name: "buttonFontFamily",
-        displayName: "按钮字体",
-        description: "设置按钮字体",
-        value: DefaultSettings.buttonFontFamily
-    });
-
-    buttonFontSize = new formattingSettings.NumUpDown({
-        name: "buttonFontSize",
-        displayName: "按钮字号",
-        description: "设置按钮字号大小",
-        value: DefaultSettings.buttonFontSize,
-        options: {
-            minValue: {
-                type: powerbi.visuals.ValidatorType.Min,
-                value: 8
-            },
-            maxValue: {
-                type: powerbi.visuals.ValidatorType.Max,
-                value: 32
-            }
-        }
-    });
-
-    buttonTextColor = new formattingSettings.ColorPicker({
-        name: "buttonTextColor",
-        displayName: "按钮文字颜色",
-        description: "设置按钮文字颜色",
-        value: DefaultSettings.buttonTextColor
-    });
-
-    buttonBackgroundColor = new formattingSettings.ColorPicker({
-        name: "buttonBackgroundColor",
-        displayName: "按钮背景颜色",
-        description: "设置按钮背景颜色",
-        value: DefaultSettings.buttonBackgroundColor
-    });
-
     name: string = "styleSettings";
     displayName: string = "样式设置";
     description: string = "自定义显示样式";
@@ -96,11 +54,7 @@ export class styleSettingsCard extends formattingSettings.Model {
         this.fontFamily,
         this.fontSize,
         this.textColor,
-        this.backgroundColor,
-        this.buttonFontFamily,
-        this.buttonFontSize,
-        this.buttonTextColor,
-        this.buttonBackgroundColor
+        this.backgroundColor
     ];
 
     public getFormattingCard(): powerbi.visuals.FormattingCard {
@@ -129,20 +83,10 @@ export class styleSettingsCard extends formattingSettings.Model {
                 fontFamily: this.fontFamily.value,
                 fontSize: this.fontSize.value,
                 textColor: this.textColor.value,
-                backgroundColor: this.backgroundColor.value,
-                buttonFontFamily: this.buttonFontFamily.value,
-                buttonFontSize: this.buttonFontSize.value,
-                buttonTextColor: this.buttonTextColor.value,
-                buttonBackgroundColor: this.buttonBackgroundColor.value
+                backgroundColor: this.backgroundColor.value
             },
             validValues: {
                 fontSize: {
-                    numberRange: {
-                        min: 8,
-                        max: 32
-                    }
-                },
-                buttonFontSize: {
                     numberRange: {
                         min: 8,
                         max: 32

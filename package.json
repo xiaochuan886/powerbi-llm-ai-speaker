@@ -7,8 +7,7 @@
     "start": "pbiviz start",
     "package": "pbiviz package",
     "lint": "eslint . --ext .ts",
-    "build-less": "lessc style/visual.less style/visual.css",
-    "test": "npm run build-less && http-server -o test/index.html"
+    "build-less": "lessc style/visual.less style/visual.css"
   },
   "dependencies": {
     "powerbi-visuals-api": "~5.3.0",
@@ -17,7 +16,6 @@
   "devDependencies": {
     "eslint": "^8.0.0",
     "eslint-plugin-powerbi-visuals": "^1.0.0",
-    "http-server": "^14.1.1",
     "less": "^4.2.1",
     "ts-loader": "^9.4.1",
     "tslint": "^6.1.3",

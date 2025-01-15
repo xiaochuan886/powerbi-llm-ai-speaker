@@ -26,16 +26,76 @@ A powerful Power BI visual that provides AI-powered data analysis and insights g
   - 完整的中文支持
   - Full Chinese language support
 
+## 📈 使用示例 | Usage Examples
+
+### 主界面 | Main Interface
+![主界面](docs/images/main-interface.png)
+
+主界面展示了数据分析结果和交互按钮，简洁直观的设计让您专注于数据洞察。
+
+The main interface shows analysis results and interaction buttons, with a clean design that lets you focus on data insights.
+
+### API 设置 | API Settings
+![API设置](docs/images/api-settings.png)
+
+在 API 设置中，您可以：
+- 选择 AI 服务提供商（OpenAI/Moonshot）
+- 配置 API 密钥
+- 设置自定义 API 地址
+- 选择合适的模型
+- 自定义分析提示模板
+
+In API settings, you can:
+- Choose AI service provider (OpenAI/Moonshot)
+- Configure API key
+- Set custom API endpoint
+- Select appropriate model
+- Customize analysis prompt template
+
+### 样式设置 | Style Settings
+![样式设置](docs/images/style-settings.png)
+
+丰富的样式设置选项：
+- 字体选择（支持多种中文字体）
+- 颜色主题定制
+- 按钮样式调整
+- 界面布局优化
+
+Rich style settings options:
+- Font selection (multiple Chinese fonts supported)
+- Color theme customization
+- Button style adjustment
+- Interface layout optimization
+
+### 分析演示 | Analysis Demo
+![分析演示](docs/images/analysis-demo.png)
+
+实际数据分析场景展示：
+1. 选择要分析的数据
+2. 点击分析按钮
+3. 获取 AI 生成的专业见解
+
+Real data analysis scenario:
+1. Select data for analysis
+2. Click analyze button
+3. Get AI-generated professional insights
+
 ## 📦 安装 | Installation
 
 1. 下载最新版本的 .pbiviz 文件
-2. 在 Power BI Desktop 中导入自定义视觉对象
+2. 在 Power BI Desktop 中导入自定义视觉对象：
+   - 点击"可视化"窗格中的"..."
+   - 选择"从文件导入视觉对象"
+   - 选择下载的 .pbiviz 文件
 3. 将视觉对象添加到您的报表中
 
 ---
 
 1. Download the latest .pbiviz file
-2. Import custom visual in Power BI Desktop
+2. Import custom visual in Power BI Desktop:
+   - Click "..." in the Visualizations pane
+   - Choose "Import visual from file"
+   - Select the downloaded .pbiviz file
 3. Add the visual to your report
 
 ## 🔧 配置 | Configuration
@@ -43,29 +103,45 @@ A powerful Power BI visual that provides AI-powered data analysis and insights g
 ### API 设置 | API Settings
 
 1. 选择 AI 服务提供商
+   - 支持 OpenAI 和 Moonshot
+   - 可自定义其他兼容服务
+
 2. 配置 API 密钥
+   - 在服务提供商获取 API 密钥
+   - 填入对应的配置项
+
 3. 设置 API 地址（可选）
+   - 默认使用官方接口
+   - 可配置自定义代理地址
+
 4. 选择模型
+   - 支持 GPT-3.5/4.0
+   - 支持 Moonshot 系列模型
+
 5. 自定义提示词模板
-
----
-
-1. Choose AI service provider
-2. Configure API key
-3. Set API base URL (optional)
-4. Select model
-5. Customize prompt template
+   - 预设多种分析模板
+   - 支持自定义分析角度
 
 ### 样式设置 | Style Settings
 
 - 字体设置 | Font settings
+  - 多种中文字体选择
+  - 自定义字号大小
+
 - 颜色配置 | Color configuration
+  - 主题色调整
+  - 文字颜色设置
+  - 背景色定制
+
 - 按钮样式 | Button styles
+  - 圆角大小调整
+  - 悬停效果设置
+  - 配色方案选择
+
 - 界面布局 | Interface layout
-
-## 📈 使用示例 | Usage Examples
-
-[示例截图和说明即将添加 | Screenshots and instructions coming soon]
+  - 组件间距调整
+  - 对齐方式设置
+  - 响应式布局
 
 ## 🤝 贡献 | Contributing
 

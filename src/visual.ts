@@ -808,60 +808,10 @@ export class Visual implements IVisual {
             const style = document.createElement('style');
             style.textContent = `
                 .debug-panel {
-                    position: fixed;
-                    bottom: 10px;
-                    right: 10px;
-                    width: 400px;
-                    max-height: 300px;
-                    background: rgba(0, 0, 0, 0.8);
-                    color: #fff;
-                    font-family: monospace;
-                    font-size: 12px;
-                    padding: 10px;
-                    border-radius: 5px;
-                    overflow-y: auto;
-                    z-index: 10000;
-                    display: none;
-                }
-                .debug-panel.show {
-                    display: block;
-                }
-                .debug-entry {
-                    margin-bottom: 5px;
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                    padding-bottom: 5px;
-                }
-                .debug-time {
-                    color: #888;
-                    font-size: 10px;
-                }
-                .debug-label {
-                    color: #4CAF50;
-                    margin-right: 5px;
+                    display: none !important;
                 }
             `;
             document.head.appendChild(style);
-            
-            // 添加切换按钮
-            const toggleButton = document.createElement('button');
-            toggleButton.textContent = '显示调试';
-            toggleButton.style.cssText = `
-                position: fixed;
-                bottom: 10px;
-                right: 420px;
-                padding: 5px 10px;
-                background: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                cursor: pointer;
-                z-index: 10000;
-            `;
-            toggleButton.onclick = () => {
-                debugDiv.classList.toggle('show');
-                toggleButton.textContent = debugDiv.classList.contains('show') ? '隐藏调试' : '显示调试';
-            };
-            document.body.appendChild(toggleButton);
         }
 
         // 创建新的调试条目

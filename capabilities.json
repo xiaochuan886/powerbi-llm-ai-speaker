@@ -109,7 +109,11 @@
                     "displayName": "背景颜色",
                     "description": "设置整体背景颜色",
                     "type": {
-                        "text": true
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
                     }
                 },
                 "buttonBackgroundColor": {

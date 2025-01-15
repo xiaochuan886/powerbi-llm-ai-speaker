@@ -20,6 +20,8 @@
         "src/visual.ts",
         "src/validator.ts",
         "src/logger.ts",
-        "src/i18n.ts"
+        "src/i18n.ts",
+        "src/cards/apiSettingsCard.ts",
+        "src/cards/styleSettingsCard.ts"
     ]
 }

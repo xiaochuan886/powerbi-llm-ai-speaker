@@ -107,13 +107,9 @@
                 },
                 "backgroundColor": {
                     "displayName": "背景颜色",
-                    "description": "设置背景颜色",
+                    "description": "设置整体背景颜色",
                     "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
+                        "text": true
                     }
                 },
                 "buttonBackgroundColor": {
@@ -143,6 +139,13 @@
                     "description": "设置按钮圆角大小",
                     "type": {
                         "numeric": true
+                    }
+                },
+                "initialText": {
+                    "displayName": "初始文字",
+                    "description": "设置初始显示的文字",
+                    "type": {
+                        "text": true
                     }
                 }
             }

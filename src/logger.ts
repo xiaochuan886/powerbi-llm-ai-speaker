@@ -1,6 +1,6 @@
 export interface ILogEntry {
     timestamp: string;
-    type: 'info' | 'error' | 'api';
+    type: 'info' | 'error' | 'warning' | 'debug';
     message: string;
     details?: any;
 }

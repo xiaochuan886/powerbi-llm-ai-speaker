@@ -1,6 +1,6 @@
 {
   "name": "LlmAISpeaker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI Insight Analysis Visual for Power BI",
   "scripts": {
     "pbiviz": "pbiviz",

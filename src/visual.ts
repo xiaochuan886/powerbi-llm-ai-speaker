@@ -12,6 +12,22 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import DataView = powerbi.DataView;
 
+const DefaultSettings = {
+    provider: 'moonshot',
+    apiKey: '',
+    apiBase: 'https://api.moonshot.cn/v1',
+    model: 'moonshot-v1-8k',
+    promptTemplate: '请分析以下数据并给出见解：\n\n{data}\n\n请用中文回答，并使用 Markdown 格式。',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+    fontSize: 14,
+    textColor: '#000000',
+    backgroundColor: '#ffffff',
+    buttonBackgroundColor: '#0078d4',
+    buttonTextColor: '#ffffff',
+    buttonBorderRadius: 4,
+    initialText: '等待分析...'
+};
+
 export class Visual implements IVisual {  
     private target: HTMLElement;  
     private formattingSettings: VisualFormattingSettingsModel;  
@@ -52,11 +68,6 @@ export class Visual implements IVisual {
             this.loadShowdown().catch(error => {
                 console.error('Failed to load Showdown:', error);
             });
-
-            // 设置初始默认消息
-            if (this.resultDiv) {
-                this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">等待分析...</div>`;
-            }
         } catch (error) {
             console.error('Error in constructor:', error);
             this.showError(error);
@@ -121,7 +132,10 @@ export class Visual implements IVisual {
         // 创建结果区域
         this.resultDiv = document.createElement('div');
         this.resultDiv.className = 'markdown-body';
-        this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">等待分析...</div>`;
+        
+        // 获取初始文字设置
+        const initialText = this.formattingSettings?.styleSettings?.initialText?.value || DefaultSettings.initialText;
+        this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">${initialText}</div>`;
         
         // 正确的嵌套顺序
         content.appendChild(this.resultDiv);
@@ -364,6 +378,56 @@ export class Visual implements IVisual {
         
         // 初始化时添加一条调试信息
         this.logDebug('初始化', '界面已加载完成');
+
+        // 为 markdown-body 添加点击事件
+        this.resultDiv.addEventListener('click', async (e) => {
+            try {
+                const text = this.resultDiv.innerText;
+                const success = await this.copyToClipboard(text);
+                
+                // 创建或获取 toast 元素
+                let toast = document.querySelector('.copy-toast') as HTMLDivElement;
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.className = 'copy-toast';
+                    document.body.appendChild(toast);
+                }
+                
+                if (success) {
+                    // 显示成功提示
+                    toast.textContent = '复制成功！';
+                    this.logDebug('复制', '内容已复制到剪贴板');
+                } else {
+                    // 显示失败提示
+                    toast.textContent = '复制失败，请重试';
+                    this.logDebug('复制错误', '复制命令执行失败');
+                }
+                
+                toast.classList.add('show');
+                
+                // 3秒后隐藏
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            } catch (error) {
+                this.logDebug('复制错误', String(error));
+                
+                // 显示错误提示
+                let toast = document.querySelector('.copy-toast') as HTMLDivElement;
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.className = 'copy-toast';
+                    document.body.appendChild(toast);
+                }
+                
+                toast.textContent = '复制失败，请重试';
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        });
     }
 
     private showError(error: Error | unknown) {
@@ -424,6 +488,13 @@ export class Visual implements IVisual {
 
     private updateStyles() {
         try {
+            this.logDebug('Updating Styles', 'Start');
+            // 获取当前的样式设置
+            const styleSettings = this.formattingSettings.styleSettings;
+            this.logDebug('Style Settings', JSON.stringify({
+                initialText: styleSettings?.initialText?.value
+            }));
+            
             // 移除旧的样式表
             const oldStyle = document.getElementById('visual-style');
             if (oldStyle) {
@@ -433,9 +504,6 @@ export class Visual implements IVisual {
             // 创建新的样式表
             const style = document.createElement('style');
             style.id = 'visual-style';
-            
-            // 获取当前的样式设置
-            const styleSettings = this.formattingSettings.styleSettings;
             
             // 获取颜色值
             const textColor = this.getColorValue(styleSettings.textColor);
@@ -569,7 +637,7 @@ export class Visual implements IVisual {
             }
         } catch (err) {
             console.error('Error in updateStyles:', err);
-            this.logDebug('样式更新错误', String(err));
+            this.logDebug('Style Update Error', String(err));
         }
     }
 
@@ -609,6 +677,13 @@ export class Visual implements IVisual {
         const button = this.mainContainer.querySelector('#analyze-btn') as HTMLButtonElement;
         
         try {
+            // 添加数据检查的调试信息
+            this.logDebug('Current Data', JSON.stringify({
+                hasData: Boolean(this.currentData && this.currentData.length > 0),
+                dataLength: this.currentData?.length || 0,
+                firstItem: this.currentData && this.currentData.length > 0 ? JSON.stringify(this.currentData[0]) : 'none'
+            }));
+
             // 显示加载动画
             this.showLoading(true);
             
@@ -621,30 +696,32 @@ export class Visual implements IVisual {
             // 获取 API 设置
             const apiSettings = this.formattingSettings.apiSettings;
             
-            // 检查 API 设置
-            const missingSettings = [];
-            if (!apiSettings.apiKey?.value) missingSettings.push('API密钥');
-            if (!apiSettings.model?.value) missingSettings.push('模型名称');
-            if (!apiSettings.apiBase?.value) missingSettings.push('API地址');
-            if (!apiSettings.promptTemplate?.value) missingSettings.push('分析提示模板');
-
-            if (missingSettings.length > 0) {
-                this.showError(new Error(`请在设置面板中完善以下API设置：${missingSettings.join('、')}`));
-                return;
-            }
+            // 记录 API 设置
+            this.logDebug('API Settings Check', JSON.stringify({
+                hasProvider: Boolean(apiSettings?.provider?.value),
+                hasApiKey: Boolean(apiSettings?.apiKey?.value),
+                hasApiBase: Boolean(apiSettings?.apiBase?.value),
+                hasModel: Boolean(apiSettings?.model?.value),
+                hasTemplate: Boolean(apiSettings?.promptTemplate?.value)
+            }));
 
             // 更新本地设置
             this.settings = {
-                provider: apiSettings.provider?.value || 'moonshot',
-                apiKey: apiSettings.apiKey.value,
-                apiBase: apiSettings.apiBase.value,
-                model: apiSettings.model.value,
-                promptTemplate: apiSettings.promptTemplate.value
+                provider: apiSettings?.provider?.value || DefaultSettings.provider,
+                apiKey: apiSettings?.apiKey?.value || '',
+                apiBase: apiSettings?.apiBase?.value || DefaultSettings.apiBase,
+                model: apiSettings?.model?.value || DefaultSettings.model,
+                promptTemplate: apiSettings?.promptTemplate?.value || DefaultSettings.promptTemplate
             };
 
-            if (!this.currentData || this.currentData.length === 0) {
-                this.showError(new Error('暂无数据可供分析'));
-                return;
+            // 检查数据
+            if (!this.currentData || !Array.isArray(this.currentData) || this.currentData.length === 0) {
+                throw new Error('暂无数据可供分析，请确保已添加数据字段');
+            }
+
+            // 检查必要的 API 设置
+            if (!this.settings.apiKey) {
+                throw new Error('请在设置面板中配置 API 密钥');
             }
 
             // 确保 Showdown 已加载
@@ -655,15 +732,16 @@ export class Visual implements IVisual {
             const dataStr = '```json\n' + JSON.stringify(this.currentData, null, 2) + '\n```';
             const content = this.settings.promptTemplate.replace('{data}', dataStr);
 
+            this.logDebug('API Request Content', content.substring(0, 100) + '...');
+
             const baseUrl = this.settings.apiBase.endsWith('/') ? 
                 this.settings.apiBase.slice(0, -1) : this.settings.apiBase;
             const endpoint = '/chat/completions';
             const url = baseUrl + endpoint;
 
-            this.logDebug('API请求', JSON.stringify({
+            this.logDebug('API Request', JSON.stringify({
                 url,
-                model: this.settings.model,
-                content: content.substring(0, 100) + '...'
+                model: this.settings.model
             }));
 
             const response = await fetch(url, {
@@ -715,30 +793,185 @@ export class Visual implements IVisual {
     }
 
     private logDebug(label: string, content: string) {
+        // 在控制台输出
         console.log(`[${label}]`, content);
+        
+        // 获取或创建调试区域
+        let debugDiv = document.getElementById('debug');
+        if (!debugDiv) {
+            debugDiv = document.createElement('div');
+            debugDiv.id = 'debug';
+            debugDiv.className = 'debug-panel';
+            document.body.appendChild(debugDiv);
+            
+            // 添加调试面板的样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .debug-panel {
+                    position: fixed;
+                    bottom: 10px;
+                    right: 10px;
+                    width: 400px;
+                    max-height: 300px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: #fff;
+                    font-family: monospace;
+                    font-size: 12px;
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-y: auto;
+                    z-index: 10000;
+                    display: none;
+                }
+                .debug-panel.show {
+                    display: block;
+                }
+                .debug-entry {
+                    margin-bottom: 5px;
+                    border-bottom: 1px solid rgba(255,255,255,0.1);
+                    padding-bottom: 5px;
+                }
+                .debug-time {
+                    color: #888;
+                    font-size: 10px;
+                }
+                .debug-label {
+                    color: #4CAF50;
+                    margin-right: 5px;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 添加切换按钮
+            const toggleButton = document.createElement('button');
+            toggleButton.textContent = '显示调试';
+            toggleButton.style.cssText = `
+                position: fixed;
+                bottom: 10px;
+                right: 420px;
+                padding: 5px 10px;
+                background: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                z-index: 10000;
+            `;
+            toggleButton.onclick = () => {
+                debugDiv.classList.toggle('show');
+                toggleButton.textContent = debugDiv.classList.contains('show') ? '隐藏调试' : '显示调试';
+            };
+            document.body.appendChild(toggleButton);
+        }
+
+        // 创建新的调试条目
+        const entry = document.createElement('div');
+        entry.className = 'debug-entry';
+        
+        const time = document.createElement('div');
+        time.className = 'debug-time';
+        time.textContent = new Date().toLocaleTimeString();
+        
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'debug-label';
+        labelSpan.textContent = `[${label}]`;
+        
+        const contentSpan = document.createElement('span');
+        contentSpan.textContent = content;
+        
+        entry.appendChild(time);
+        entry.appendChild(labelSpan);
+        entry.appendChild(contentSpan);
+        
+        // 添加到调试区域的顶部
+        debugDiv.insertBefore(entry, debugDiv.firstChild);
+        
+        // 限制调试条目数量
+        while (debugDiv.children.length > 50) {
+            debugDiv.removeChild(debugDiv.lastChild);
+        }
     }
 
     public update(options: VisualUpdateOptions) {
         try {
-            if (!options.dataViews || !options.dataViews[0]) {
-                return;
+            const oldInitialText = this.formattingSettings?.styleSettings?.initialText?.value;
+            
+            // 更新格式设置
+            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews);
+            
+            const newInitialText = this.formattingSettings?.styleSettings?.initialText?.value;
+            
+            // 记录更新类型和格式设置
+            this.logDebug('Update Type', `${options.type}`);
+            this.logDebug('Format Settings', JSON.stringify({
+                oldInitialText,
+                newInitialText,
+                defaultText: DefaultSettings.initialText,
+                hasData: this.currentData && this.currentData.length > 0
+            }));
+
+            // 检查初始文字是否发生变化
+            const initialTextChanged = oldInitialText !== newInitialText;
+            this.logDebug('Initial Text Changed', `${initialTextChanged} (${oldInitialText} -> ${newInitialText})`);
+
+            // 如果初始文字发生变化，检查是否需要更新显示
+            if (initialTextChanged && this.resultDiv) {
+                const currentContent = this.resultDiv.innerText.trim();
+                const isShowingInitialText = !currentContent || 
+                    currentContent === DefaultSettings.initialText || 
+                    currentContent === oldInitialText || 
+                    currentContent.includes('等待分析') || 
+                    currentContent.includes('请点击') || 
+                    currentContent.includes('分析');
+
+                this.logDebug('Content Check', JSON.stringify({
+                    currentContent,
+                    isShowingInitialText,
+                    initialTextChanged
+                }));
+
+                if (isShowingInitialText) {
+                    this.logDebug('Updating Display', `Setting to: ${newInitialText}`);
+                    this.resultDiv.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">${newInitialText || DefaultSettings.initialText}</div>`;
+                }
             }
 
-            // 移除默认消息相关的检查和更新
-            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews);
+            // 更新数据
+            if (options.dataViews && options.dataViews[0] && options.dataViews[0].table) {
+                const dataView = options.dataViews[0];
+                const columns = dataView.table.columns;
+                const rows = dataView.table.rows;
+
+                // 检查是否有实际的数据
+                if (rows && rows.length > 0 && columns && columns.length > 0) {
+                    this.currentData = rows.map(row => {
+                        const obj = {};
+                        columns.forEach((col, index) => {
+                            obj[col.displayName] = row[index];
+                        });
+                        return obj;
+                    });
+
+                    this.logDebug('Data Updated', JSON.stringify({
+                        rowCount: rows.length,
+                        columnCount: columns.length,
+                        sampleData: this.currentData.length > 0 ? JSON.stringify(this.currentData[0]) : 'none'
+                    }));
+                } else {
+                    this.currentData = [];
+                    this.logDebug('No Data', 'Table exists but no rows or columns');
+                }
+            } else {
+                this.currentData = [];
+                this.logDebug('No Data', 'DataViews is empty or invalid');
+            }
 
             // 更新样式设置
-            if ((options.type & powerbi.VisualUpdateType.Style) === powerbi.VisualUpdateType.Style) {
-                this.updateStyles();
-            }
+            this.updateStyles();
 
-            // 获取数据视图
-            const dataView = options.dataViews[0];
-            
-            // 更新视觉对象
-            this.updateInternal(dataView);
         } catch (err) {
             console.error('Error in update:', err);
+            this.logDebug('Update Error', String(err));
         }
     }
 
@@ -747,35 +980,18 @@ export class Visual implements IVisual {
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
+        this.logDebug('Getting Formatting Model', 'Start');
+        const model = this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
+        this.logDebug('Formatting Model', JSON.stringify({
+            initialText: this.formattingSettings?.styleSettings?.initialText?.value
+        }));
+        
         // 在获取格式化模型时也确保更新样式
         requestAnimationFrame(() => {
             this.updateStyles();
         });
-        return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
-    }
-
-    private updateInternal(dataView: DataView) {
-        try {
-            // 解析数据  
-            if (dataView.table) {  
-                const columns = dataView.table.columns;  
-                const rows = dataView.table.rows;  
-                
-                this.currentData = rows.map(row => {  
-                    const obj = {};  
-                    columns.forEach((col, index) => {  
-                        obj[col.displayName] = row[index];  
-                    });  
-                    return obj;  
-                });  
-            }
-
-            // 确保在数据更新后应用样式
-           
-        } catch (error) {
-            console.error('Error in updateInternal:', error);
-            this.showError(error as Error);
-        }
+        
+        return model;
     }
 
     private showLoading(visible: boolean): void {
@@ -808,9 +1024,11 @@ export class Visual implements IVisual {
             
             // 当显示加载动画时，保存当前内容
             if (visible && this.resultDiv) {
-                // 只有当当前内容不是默认提示时才保存
                 const currentContent = this.resultDiv.innerHTML;
-                if (currentContent.indexOf('等待分析...') === -1) {
+                const initialText = this.formattingSettings?.styleSettings?.initialText?.value || DefaultSettings.initialText;
+                const initialHtml = `<div style="color: #666; text-align: center; padding: 20px;">${initialText}</div>`;
+                // 只有当当前内容不是初始文字时才保存
+                if (currentContent !== initialHtml) {
                     this.resultDiv.dataset.savedContent = currentContent;
                 }
                 this.resultDiv.innerHTML = '';
@@ -823,5 +1041,30 @@ export class Visual implements IVisual {
                 }
             }
         }
+    }
+
+    private copyToClipboard(text: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            try {
+                // 创建临时文本区域
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '0';
+                document.body.appendChild(textArea);
+
+                // 选择并复制文本
+                textArea.select();
+                const success = document.execCommand('copy');
+                
+                // 清理
+                document.body.removeChild(textArea);
+                
+                resolve(success);
+            } catch (err) {
+                resolve(false);
+            }
+        });
     }
 }

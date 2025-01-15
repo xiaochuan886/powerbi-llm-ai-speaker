@@ -8,7 +8,8 @@ const DefaultSettings = {
     backgroundColor: { value: "#ffffff" },
     buttonBackgroundColor: { value: "#0078d4" },
     buttonTextColor: { value: "#ffffff" },
-    buttonBorderRadius: 4
+    buttonBorderRadius: 4,
+    initialText: '等待分析...'
 };
 
 export class styleSettingsCard extends formattingSettings.Model {
@@ -81,6 +82,14 @@ export class styleSettingsCard extends formattingSettings.Model {
         }
     });
 
+    initialText = new formattingSettings.TextInput({
+        name: "initialText",
+        displayName: "初始文字",
+        description: "设置初始显示的文字",
+        value: DefaultSettings.initialText,
+        placeholder: "请输入初始显示的文字"
+    });
+
     name: string = "styleSettings";
     displayName: string = "样式设置";
     description: string = "自定义显示样式";
@@ -91,7 +100,8 @@ export class styleSettingsCard extends formattingSettings.Model {
         this.backgroundColor,
         this.buttonBackgroundColor,
         this.buttonTextColor,
-        this.buttonBorderRadius
+        this.buttonBorderRadius,
+        this.initialText
     ];
 
     public getFormattingCard(): powerbi.visuals.FormattingCard {
@@ -123,7 +133,8 @@ export class styleSettingsCard extends formattingSettings.Model {
                 backgroundColor: this.backgroundColor.value,
                 buttonBackgroundColor: this.buttonBackgroundColor.value,
                 buttonTextColor: this.buttonTextColor.value,
-                buttonBorderRadius: this.buttonBorderRadius.value
+                buttonBorderRadius: this.buttonBorderRadius.value,
+                initialText: this.initialText.value
             },
             validValues: {
                 fontSize: {

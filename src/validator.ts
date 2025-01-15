@@ -3,6 +3,14 @@ export interface IValidationResult {
     error?: string;
 }
 
+export interface IAPISettings {
+    provider: string;
+    apiKey: string;
+    apiBase: string;
+    model: string;
+    promptTemplate: string;
+}
+
 export class DataValidator {
     private static readonly MAX_ROWS = 1000;
     private static readonly MAX_COLUMNS = 50;
@@ -38,6 +46,40 @@ export class DataValidator {
         }
 
         // 所有检查通过
+        return {
+            isValid: true
+        };
+    }
+
+    public static validateAPISettings(settings: IAPISettings): IValidationResult {
+        if (!settings.apiKey) {
+            return {
+                isValid: false,
+                error: '请提供API密钥'
+            };
+        }
+
+        if (!settings.apiBase) {
+            return {
+                isValid: false,
+                error: '请提供API地址'
+            };
+        }
+
+        if (!settings.model) {
+            return {
+                isValid: false,
+                error: '请提供模型名称'
+            };
+        }
+
+        if (!settings.promptTemplate) {
+            return {
+                isValid: false,
+                error: '请提供分析提示模板'
+            };
+        }
+
         return {
             isValid: true
         };
